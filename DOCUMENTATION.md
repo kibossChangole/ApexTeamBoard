@@ -2,7 +2,7 @@
 
 ## Overview
 
-TeamBoard is a modern Kanban-style task management application built with a React frontend and a Node.js API. It features real-time search, task CRUD operations, a commenting system, and persistent storage via SQLite.
+TeamBoard is a modern Kanban-style task management application built as a frontend-only SPA. It features real-time search, task CRUD operations, a commenting system, and persistent browser storage via localStorage.
 
 ---
 
@@ -19,34 +19,32 @@ TeamBoard is a modern Kanban-style task management application built with a Reac
 
 ### Backend
 
-- **Runtime**: Node.js
-- **Framework**: Express (TypeScript)
-- **Database**: SQLite (via `better-sqlite3`)
-- **Validation**: Zod
-- **Authentication**: JWT (JSON Web Tokens)
-- **Password Hashing**: BcryptJS
+- **Runtime**: Browser (no server required)
+- **Persistence**: localStorage
+- **Authentication**: local session token + persisted user record
+- **Data Access**: In-browser API shim (`apiFetch`) that emulates REST endpoints
 
 ---
 
-## Backend Architecture
+## Data Architecture
 
-### Database Schema
+### Storage Schema
 
-The SQLite database (`database.sqlite`) consists of three tables:
+Browser storage is split into three collections:
 
-- `users`: Stores user identity and hashed passwords.
+- `users`: Stores user identity and local credentials.
 - `tasks`: Stores task details, current status, and timestamps.
 - `comments`: Linked to tasks and users, storing discussion logs.
 
 ### Authentication Flow
 
-1. **Register**: Creates a user, hashes the password via `bcrypt`, and returns a JWT.
-2. **Login**: Verifies credentials and returns a JWT.
-3. **Middleware**: An `authenticate` middleware protects routes by verifying the `Authorization: Bearer <token>` header.
+1. **Register**: Creates a local user in browser storage and returns a local token.
+2. **Login**: Verifies stored credentials and returns a local token.
+3. **Session**: `AuthContext` persists token and user in localStorage.
 
 ### Validation & Error Handling
 
-All incoming requests are validated using **Zod** schemas.
+All incoming payloads are validated inside the in-browser data layer before writes are committed to storage.
 
 - **Consistent Error Shape**: All errors follow the structure:
   ```json
@@ -86,6 +84,8 @@ All incoming requests are validated using **Zod** schemas.
 
 ## API Reference
 
+The frontend uses an in-browser API shim that mirrors REST-like endpoints for compatibility with React Query.
+
 ### Authentication
 
 - `POST /auth/register`: Create a new user.
@@ -110,18 +110,12 @@ All incoming requests are validated using **Zod** schemas.
 
 ### 1. Seeding the Database
 
-To populate the database with demo tasks, users, and comments:
-
-```bash
-cd apps/api
-npm run seed
-```
+Demo data is seeded automatically on first load (user, tasks, comments).
 
 **Demo User**: `alice` / `password123`
 
 ### 2. Running the Application
 
-Ensure both the API and Web applications are running:
+Run only the web application:
 
-- **API**: `npm run dev` in `apps/api` (Starts on port 4000)
 - **Web**: `npm run dev` in `apps/web` (Starts on port 5173)
